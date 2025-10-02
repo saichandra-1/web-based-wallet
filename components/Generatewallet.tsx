@@ -83,7 +83,7 @@ export function Generatewalletforadd({ wallettype, mnemonicWords, count, clearVe
     const [walletsprivkey,setWalletsprivkey] = useState<string[]>([]);
     const [showSecret,setShowSecret] = useState<boolean[]>([]);
 
-    const generatewalletforadd = useCallback(() => {
+    useEffect(() => {
         if (count === 0) return; // Don't generate on initial render
         const mnemonic = mnemonicWords.join(" ");
         const seed = mnemonicToSeedSync(mnemonic);
@@ -92,16 +92,19 @@ export function Generatewalletforadd({ wallettype, mnemonicWords, count, clearVe
         const keyPair = nacl.sign.keyPair.fromSeed(derivedSeed);
         const secret = Buffer.from(keyPair.secretKey).toString('hex');
         const pubkey = Buffer.from(keyPair.publicKey).toString('hex');
-        setWalletspubkey(prev => [...prev, pubkey]);
-        setWalletsprivkey(prev => [...prev, secret]);
+        
+        setWalletspubkey(prev => {
+            const newArray = [...prev, pubkey];
+            localStorage.setItem("walletspubkey", JSON.stringify(newArray));
+            return newArray;
+        });
+        setWalletsprivkey(prev => {
+            const newArray = [...prev, secret];
+            localStorage.setItem("walletsprivkey", JSON.stringify(newArray));
+            return newArray;
+        });
         setShowSecret(prev => [...prev, false]);
-        localStorage.setItem("walletspubkey", JSON.stringify([...walletspubkey, pubkey]));
-        localStorage.setItem("walletsprivkey", JSON.stringify([...walletsprivkey, secret]));
-    }, [count, mnemonicWords, wallettype, walletspubkey, walletsprivkey]);
-
-    useEffect(()=>{
-        generatewalletforadd();
-    },[count, generatewalletforadd]);
+    }, [count, mnemonicWords, wallettype]);
 
     useEffect(()=>{
         setWalletspubkey([]);
