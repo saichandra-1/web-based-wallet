@@ -1,37 +1,35 @@
 "use client"
-import { useEffect, useState } from "react"
-import { generateMnemonic, mnemonicToSeedSync, validateMnemonic, wordlists } from "bip39";
+import { useEffect, useState, useCallback } from "react"
+import { generateMnemonic, mnemonicToSeedSync } from "bip39";
 import { derivePath } from "ed25519-hd-key";
-import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
-import { ethers } from "ethers";
 import nacl from "tweetnacl";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
 
 
-export function Generatewallet({wallettype}:any){
+export function Generatewallet({wallettype}:{wallettype:number}){
     const [mnemonicWords, setMnemonicWords] = useState<string[]>(
     Array(12).fill(" "));
     const [count, setCount] = useState(0);
     const [clearVersion, setClearVersion] = useState(0);
 
-    function generatewallet(){
+    const generatewallet = useCallback(() => {
         const mnemonic = generateMnemonic();
-        const seed = mnemonicToSeedSync(mnemonic);
-        const path = `m/44'/${wallettype}'/0'/0'`; 
-        const derivedSeed = derivePath(path, seed.toString("hex")).key;
-        const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
+        // const seed = mnemonicToSeedSync(mnemonic);
+        // const path = `m/44'/${wallettype}'/0'/0'`; 
+        // const derivedSeed = derivePath(path, seed.toString("hex")).key;
+        // const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
         const words = mnemonic.split(" ");
         setMnemonicWords(words);
-        localStorage.setItem("mnemonics", JSON.stringify(mnemonicWords));
-    }
+        localStorage.setItem("mnemonics", JSON.stringify(words));
+    }, []);
 
     useEffect(()=>{
         generatewallet();
 
-    },[])
+    },[generatewallet])
 
 
 
@@ -80,29 +78,30 @@ export function Generatewallet({wallettype}:any){
 }
 
 
-export function Generatewalletforadd({ wallettype, mnemonicWords, count, clearVersion }:{ wallettype:any; mnemonicWords:string[]; count:number; clearVersion:number }){
+export function Generatewalletforadd({ wallettype, mnemonicWords, count, clearVersion }:{ wallettype:number; mnemonicWords:string[]; count:number; clearVersion:number }){
     const [walletspubkey,setWalletspubkey] = useState<string[]>([]);
     const [walletsprivkey,setWalletsprivkey] = useState<string[]>([]);
     const [showSecret,setShowSecret] = useState<boolean[]>([]);
 
-    function generatewalletforadd(){
-        const mnemonic=mnemonicWords[count];
-        const seed=mnemonicToSeedSync(mnemonic);
-        const path= `m/44'/${wallettype}'/${count}'/0'`;
-        const derivedSeed=derivePath(path,seed.toString("hex")).key;
+    const generatewalletforadd = useCallback(() => {
+        if (count === 0) return; // Don't generate on initial render
+        const mnemonic = mnemonicWords.join(" ");
+        const seed = mnemonicToSeedSync(mnemonic);
+        const path = `m/44'/${wallettype}'/${count}'/0'`;
+        const derivedSeed = derivePath(path, seed.toString("hex")).key;
         const keyPair = nacl.sign.keyPair.fromSeed(derivedSeed);
         const secret = Buffer.from(keyPair.secretKey).toString('hex');
         const pubkey = Buffer.from(keyPair.publicKey).toString('hex');
-        setWalletspubkey([...walletspubkey, pubkey]);
-        setWalletsprivkey([...walletsprivkey, secret]);
-        setShowSecret([...showSecret, false]);
+        setWalletspubkey(prev => [...prev, pubkey]);
+        setWalletsprivkey(prev => [...prev, secret]);
+        setShowSecret(prev => [...prev, false]);
         localStorage.setItem("walletspubkey", JSON.stringify([...walletspubkey, pubkey]));
         localStorage.setItem("walletsprivkey", JSON.stringify([...walletsprivkey, secret]));
-    }
+    }, [count, mnemonicWords, wallettype, walletspubkey, walletsprivkey]);
 
     useEffect(()=>{
         generatewalletforadd();
-    },[count]);
+    },[count, generatewalletforadd]);
 
     useEffect(()=>{
         setWalletspubkey([]);
@@ -183,7 +182,7 @@ export function Generatewalletforadd({ wallettype, mnemonicWords, count, clearVe
                         </div>
                     </Card>
                 );
-            })}https://monkeytype.com/
+             })}
         </div>
     )
 }

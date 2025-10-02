@@ -1,12 +1,12 @@
 
 
 
-import { useState } from "react";
+// import { useState } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { toast } from "sonner";
 
-export function Walletselection({setwallettype,setshow}:any){
+export function Walletselection({setwallettype,setshow}:{setwallettype:(type:number)=>void; setshow:(show:boolean)=>void}){
 
     return(
         <div>
